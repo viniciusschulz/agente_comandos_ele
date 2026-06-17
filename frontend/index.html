@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Agente CAD Elétrico — Análise inteligente de diagramas elétricos industriais com IA. Ferramenta premium para engenheiros elétricos.">
+    <meta name="keywords" content="diagrama elétrico, CAD, análise, IA, engenharia elétrica, Gerdau, circuitos">
+    <meta name="author" content="Gerdau Engineering">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#0a0e1a">
+    <title>Agente CAD Elétrico | Análise de Diagramas</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- HEADER BAR                                  -->
+    <!-- ═══════════════════════════════════════════ -->
+    <header class="header-bar">
+        <div class="header-left">
+            <div class="logo-icon">
+                <i class="fas fa-bolt"></i>
+            </div>
+            <div class="header-titles">
+                <h1 class="header-title">Agente CAD Elétrico</h1>
+                <p class="header-subtitle">Análise Inteligente de Diagramas Elétricos</p>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="ai-badge">
+                <span class="badge-dot"></span>
+                <span>Powered by Gemini 2.5 Flash</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- MAIN CONTENT                                -->
+    <!-- ═══════════════════════════════════════════ -->
+    <main class="main-content">
+
+        <!-- ─────────────── STATE 1: UPLOAD ─────────────── -->
+        <section id="upload-state" class="state-section state-active">
+            <div class="upload-container">
+                <div class="upload-hero-text">
+                    <h2>Análise de Diagramas Elétricos</h2>
+                    <p>Faça o upload do seu diagrama e receba uma análise completa gerada por inteligência artificial</p>
+                </div>
+
+                <div id="drop-zone" class="drop-zone" tabindex="0" role="button" aria-label="Área de upload de arquivos">
+                    <input type="file" id="file-input" accept=".pdf,.dwg,.dxf" hidden>
+                    <div class="drop-zone-content">
+                        <div class="drop-icon-wrapper">
+                            <div class="drop-icon-ring"></div>
+                            <i class="fas fa-file-import drop-icon"></i>
+                        </div>
+                        <h3 class="drop-title">Arraste seu diagrama elétrico aqui</h3>
+                        <p class="drop-subtitle">ou clique para selecionar</p>
+                        <div class="drop-formats">
+                            <span class="format-badge">PDF</span>
+                            <span class="format-sep">•</span>
+                            <span class="format-badge">DWG</span>
+                            <span class="format-sep">•</span>
+                            <span class="format-badge">DXF</span>
+                        </div>
+                    </div>
+                    <!-- Drag-over overlay -->
+                    <div class="drop-zone-overlay">
+                        <i class="fas fa-cloud-arrow-up"></i>
+                        <span>Solte o arquivo aqui</span>
+                    </div>
+                </div>
+
+                <div class="upload-options">
+                    <div class="option-group">
+                        <label for="max-pages-select">
+                            <i class="fas fa-layer-group"></i>
+                            Máximo de páginas a analisar
+                        </label>
+                        <div class="select-wrapper">
+                            <select id="max-pages-select">
+                                <option value="3">3 páginas</option>
+                                <option value="5" selected>5 páginas</option>
+                                <option value="10">10 páginas</option>
+                                <option value="20">20 páginas</option>
+                                <option value="0">Todas as páginas</option>
+                            </select>
+                            <i class="fas fa-chevron-down select-arrow"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ─────────────── STATE: PROCESSING ─────────────── -->
+        <section id="processing-state" class="state-section">
+            <div class="processing-container">
+                <div class="processing-visual">
+                    <div class="processing-rings">
+                        <div class="ring ring-1"></div>
+                        <div class="ring ring-2"></div>
+                        <div class="ring ring-3"></div>
+                        <i class="fas fa-bolt processing-center-icon"></i>
+                    </div>
+                </div>
+
+                <h2 class="processing-title">Analisando seu diagrama</h2>
+                <p class="processing-file-name" id="processing-file-name">arquivo.pdf</p>
+
+                <div class="progress-steps">
+                    <div class="progress-step" id="step-convert" data-step="1">
+                        <div class="step-icon">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <div class="step-info">
+                            <span class="step-label">Convertendo desenho...</span>
+                            <span class="step-status"></span>
+                        </div>
+                        <div class="step-indicator">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </div>
+                    </div>
+                    <div class="progress-step" id="step-extract" data-step="2">
+                        <div class="step-icon">
+                            <i class="fas fa-images"></i>
+                        </div>
+                        <div class="step-info">
+                            <span class="step-label">Extraindo páginas...</span>
+                            <span class="step-status"></span>
+                        </div>
+                        <div class="step-indicator">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </div>
+                    </div>
+                    <div class="progress-step" id="step-analyze" data-step="3">
+                        <div class="step-icon">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <div class="step-info">
+                            <span class="step-label">Analisando página <span id="analyze-current">0</span> de <span id="analyze-total">0</span>...</span>
+                            <span class="step-status"></span>
+                        </div>
+                        <div class="step-indicator">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </div>
+                    </div>
+                    <div class="progress-step" id="step-report" data-step="4">
+                        <div class="step-icon">
+                            <i class="fas fa-file-lines"></i>
+                        </div>
+                        <div class="step-info">
+                            <span class="step-label">Gerando relatório...</span>
+                            <span class="step-status"></span>
+                        </div>
+                        <div class="step-indicator">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progress-bar">
+                        <div class="progress-bar-glow"></div>
+                    </div>
+                    <span class="progress-percentage" id="progress-percentage">0%</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ─────────────── STATE 2: ANALYSIS RESULTS ─────────────── -->
+        <section id="results-state" class="state-section">
+            <!-- Top File Info Bar -->
+            <div class="results-top-bar">
+                <div class="file-info">
+                    <i class="fas fa-file-pdf file-info-icon"></i>
+                    <span class="file-info-name" id="result-file-name">arquivo.pdf</span>
+                    <span class="file-info-sep">|</span>
+                    <span class="file-info-pages" id="result-page-count">5 páginas</span>
+                </div>
+                <div class="results-actions">
+                    <button class="btn-action" id="btn-export" title="Exportar relatório">
+                        <i class="fas fa-download"></i>
+                        <span>Exportar</span>
+                    </button>
+                    <button class="btn-action btn-new" id="btn-new-analysis" title="Nova análise">
+                        <i class="fas fa-plus"></i>
+                        <span>Nova Análise</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Split Panel Layout -->
+            <div class="split-container">
+                <!-- LEFT PANEL: Image Viewer -->
+                <div class="panel panel-left" id="panel-left">
+                    <div class="panel-header">
+                        <span class="panel-label"><i class="fas fa-image"></i> Visualizador</span>
+                        <div class="viewer-controls">
+                            <button class="viewer-btn" id="btn-zoom-out" title="Diminuir zoom">
+                                <i class="fas fa-search-minus"></i>
+                            </button>
+                            <span class="zoom-level" id="zoom-level">100%</span>
+                            <button class="viewer-btn" id="btn-zoom-in" title="Aumentar zoom">
+                                <i class="fas fa-search-plus"></i>
+                            </button>
+                            <button class="viewer-btn" id="btn-zoom-fit" title="Ajustar à tela">
+                                <i class="fas fa-expand"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="image-viewport" id="image-viewport">
+                        <div class="image-canvas" id="image-canvas">
+                            <img id="page-image" src="" alt="Página do diagrama" draggable="false">
+                        </div>
+                        <!-- Page indicator overlay -->
+                        <div class="page-indicator" id="page-indicator">
+                            Página <span id="page-current">1</span> de <span id="page-total">1</span>
+                        </div>
+                    </div>
+
+                    <!-- Page Navigation -->
+                    <div class="page-nav">
+                        <button class="page-nav-btn" id="btn-prev-page" title="Página anterior">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <div class="page-thumbnails" id="page-thumbnails">
+                            <!-- Thumbnails injected by JS -->
+                        </div>
+                        <button class="page-nav-btn" id="btn-next-page" title="Próxima página">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Resize Handle -->
+                <div class="resize-handle" id="resize-handle">
+                    <div class="resize-handle-line"></div>
+                </div>
+
+                <!-- RIGHT PANEL: Analysis Results -->
+                <div class="panel panel-right" id="panel-right">
+                    <div class="panel-header">
+                        <span class="panel-label"><i class="fas fa-microscope"></i> Análise</span>
+                        <div class="panel-tabs">
+                            <button class="panel-tab active" data-tab="analysis">Resultado</button>
+                            <button class="panel-tab" data-tab="raw">Texto Bruto</button>
+                        </div>
+                    </div>
+
+                    <div class="analysis-content" id="analysis-content">
+                        <!-- Tab: Analysis (parsed) -->
+                        <div class="tab-content tab-active" id="tab-analysis">
+                            <div class="accordion-group" id="accordion-group">
+                                <!-- 1. Tipo de Diagrama -->
+                                <div class="accordion-item" data-section="tipo">
+                                    <button class="accordion-header">
+                                        <div class="accordion-icon-title">
+                                            <span class="accordion-emoji">📋</span>
+                                            <span>Tipo de Diagrama</span>
+                                        </div>
+                                        <div class="accordion-right">
+                                            <span class="accordion-badge" id="badge-tipo">—</span>
+                                            <i class="fas fa-chevron-down accordion-arrow"></i>
+                                        </div>
+                                    </button>
+                                    <div class="accordion-body">
+                                        <div id="content-tipo" class="accordion-content-inner">
+                                            <p class="placeholder-text">Aguardando análise...</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 2. Componentes Identificados -->
+                                <div class="accordion-item" data-section="componentes">
+                                    <button class="accordion-header">
+                                        <div class="accordion-icon-title">
+                                            <span class="accordion-emoji">⚡</span>
+                                            <span>Componentes Identificados</span>
+                                        </div>
+                                        <div class="accordion-right">
+                                            <span class="component-count" id="component-count">0</span>
+                                            <i class="fas fa-chevron-down accordion-arrow"></i>
+                                        </div>
+                                    </button>
+                                    <div class="accordion-body">
+                                        <div id="content-componentes" class="accordion-content-inner">
+                                            <p class="placeholder-text">Aguardando análise...</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 3. Lógica de Funcionamento -->
+                                <div class="accordion-item" data-section="logica">
+                                    <button class="accordion-header">
+                                        <div class="accordion-icon-title">
+                                            <span class="accordion-emoji">🔄</span>
+                                            <span>Lógica de Funcionamento</span>
+                                        </div>
+                                        <div class="accordion-right">
+                                            <i class="fas fa-chevron-down accordion-arrow"></i>
+                                        </div>
+                                    </button>
+                                    <div class="accordion-body">
+                                        <div id="content-logica" class="accordion-content-inner">
+                                            <p class="placeholder-text">Aguardando análise...</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 4. Informações do Carimbo -->
+                                <div class="accordion-item" data-section="carimbo">
+                                    <button class="accordion-header">
+                                        <div class="accordion-icon-title">
+                                            <span class="accordion-emoji">📝</span>
+                                            <span>Informações do Carimbo</span>
+                                        </div>
+                                        <div class="accordion-right">
+                                            <i class="fas fa-chevron-down accordion-arrow"></i>
+                                        </div>
+                                    </button>
+                                    <div class="accordion-body">
+                                        <div id="content-carimbo" class="accordion-content-inner">
+                                            <p class="placeholder-text">Aguardando análise...</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 5. Observações de Segurança -->
+                                <div class="accordion-item" data-section="seguranca">
+                                    <button class="accordion-header">
+                                        <div class="accordion-icon-title">
+                                            <span class="accordion-emoji">⚠️</span>
+                                            <span>Observações de Segurança</span>
+                                        </div>
+                                        <div class="accordion-right">
+                                            <i class="fas fa-chevron-down accordion-arrow"></i>
+                                        </div>
+                                    </button>
+                                    <div class="accordion-body">
+                                        <div id="content-seguranca" class="accordion-content-inner">
+                                            <p class="placeholder-text">Aguardando análise...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab: Raw Text -->
+                        <div class="tab-content" id="tab-raw">
+                            <pre class="raw-text" id="raw-text">Aguardando análise...</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Status Bar -->
+            <div class="status-bar">
+                <div class="status-item">
+                    <i class="fas fa-clock"></i>
+                    <span>Tempo: <strong id="status-time">—</strong></span>
+                </div>
+                <div class="status-item">
+                    <i class="fas fa-microchip"></i>
+                    <span>Modelo: <strong id="status-model">Gemini 2.5 Flash</strong></span>
+                </div>
+                <div class="status-item">
+                    <i class="fas fa-file-lines"></i>
+                    <span>Páginas analisadas: <strong id="status-pages">—</strong></span>
+                </div>
+                <div class="status-item status-ready">
+                    <i class="fas fa-circle-check"></i>
+                    <span>Análise concluída</span>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- ERROR TOAST                                 -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="app.js?v=2"></script>
+</body>
+</html>
