@@ -1,8 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Determine API Base URL
+    // Configuração de API
     const API_BASE = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost' 
         ? 'http://localhost:7071/api' 
-        : '/api';
+        : 'https://func-agente-comandos-ele.azurewebsites.net/api';
 
     // State Variables
     let currentJobId = null;

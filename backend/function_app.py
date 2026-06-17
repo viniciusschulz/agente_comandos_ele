@@ -176,121 +176,28 @@ def upload(req: func.HttpRequest) -> func.HttpResponse:
 # ────────────────────────────────────────────
 # POST /api/analyze
 # ────────────────────────────────────────────
-@app.route(route="analyze", methods=["POST", "OPTIONS"])
-def analyze(req: func.HttpRequest) -> func.HttpResponse:
-    """
-    Executa a pipeline de análise para um job_id existente.
-
-    Body JSON esperado:
-        {
-            "job_id": "uuid-do-job",
-            "max_pages": 5,               // opcional, padrão 5
-            "project_context": "..."       // opcional
-        }
-    """
-    # Preflight CORS
-    if req.method == "OPTIONS":
-        return _options_response()
-
-    logger.info("Recebida requisição de análise.")
-
+def run_analysis_background(job_id: str, max_pages: int, project_context: str):
+    import io
+    import base64
+    job = jobs[job_id]
     try:
-        # Parsear body JSON
-        try:
-            body = req.get_json()
-        except ValueError:
-            return _json_response(
-                {"erro": "Body da requisição deve ser JSON válido."},
-                status_code=400,
-            )
-
-        job_id = body.get("job_id")
-        max_pages = body.get("max_pages", 5)
-        project_context = body.get("project_context", "")
-
-        if not job_id:
-            return _json_response(
-                {"erro": "O campo 'job_id' é obrigatório."},
-                status_code=400,
-            )
-
-        # Validar max_pages
-        if not isinstance(max_pages, int) or max_pages < 1:
-            max_pages = 5
-        max_pages = min(max_pages, 50)  # Limite absoluto
-
-        # Buscar job
-        job = jobs.get(job_id)
-        if not job:
-            return _json_response(
-                {"erro": f"Job não encontrado: {job_id}"},
-                status_code=404,
-            )
-
-        # Verificar se já está em processamento
-        if job["status"] == "processing":
-            return _json_response(
-                {
-                    "job_id": job_id,
-                    "status": "processing",
-                    "mensagem": "A análise já está em andamento. Consulte GET /api/status/{job_id}.",
-                },
-                status_code=202,
-            )
-
-        # Atualizar status
-        job["status"] = "processing"
-        job["started_at"] = time.time()
-
-        # Ler arquivo do disco
         file_path = job.get("file_path")
-        if not file_path or not os.path.exists(file_path):
-            job["status"] = "error"
-            job["error"] = "Arquivo não encontrado no servidor."
-            return _json_response(
-                {"erro": "Arquivo não encontrado. Faça o upload novamente."},
-                status_code=404,
-            )
-
         with open(file_path, "rb") as f:
             file_bytes = f.read()
 
-        # Processar arquivo conforme o tipo
         file_type = job.get("file_type", "pdf")
-
+        
         if file_type == "pdf":
             logger.info("Processando PDF: %s", job["filename"])
             paginas = processar_pdf(file_bytes)
-        elif file_type == "dwg":
+        else:
             logger.info("Processando DWG: %s", job["filename"])
             paginas = processar_dwg(file_bytes)
-        else:
-            job["status"] = "error"
-            job["error"] = f"Tipo de arquivo não suportado: {file_type}"
-            return _json_response(
-                {"erro": f"Tipo de arquivo não suportado: {file_type}"},
-                status_code=400,
-            )
 
-        # Verificar se DWG retornou erro (placeholder)
-        if paginas and paginas[0].get("error") and file_type == "dwg":
-            job["status"] = "error"
-            job["error"] = paginas[0]["error"]
-            return _json_response(
-                {
-                    "job_id": job_id,
-                    "status": "error",
-                    "erro": paginas[0]["error"],
-                },
-                status_code=422,
-            )
+        if max_pages <= 0:
+            max_pages = len(paginas)
 
-        # Executar análise com IA
-        logger.info(
-            "Iniciando análise com Gemini — %d página(s), limite: %d.",
-            len(paginas),
-            max_pages,
-        )
+        logger.info("Iniciando análise com Gemini — %d página(s), limite: %d.", len(paginas), max_pages)
 
         resultado = analisar_documento_completo(
             paginas=paginas,
@@ -298,47 +205,87 @@ def analyze(req: func.HttpRequest) -> func.HttpResponse:
             project_context=project_context,
         )
 
-        # Atualizar job com resultado
+        # Inject base64 images into the result so the frontend can display them
+        for i, analise in enumerate(resultado.get("analises", [])):
+            if i < len(paginas) and paginas[i].get("image"):
+                buffer = io.BytesIO()
+                paginas[i]["image"].save(buffer, format="PNG")
+                analise["image_base64"] = base64.b64encode(buffer.getvalue()).decode("utf-8")
+
         job["status"] = "completed"
         job["completed_at"] = time.time()
         job["result"] = resultado
         duracao = job["completed_at"] - job["started_at"]
-
         logger.info("Análise concluída em %.1f segundos — job_id: %s", duracao, job_id)
+        
+    except Exception as e:
+        logger.error("Erro na análise em background: %s", e, exc_info=True)
+        job["status"] = "error"
+        job["error"] = str(e)
+
+
+@app.route(route="analyze", methods=["POST", "OPTIONS"])
+def analyze(req: func.HttpRequest) -> func.HttpResponse:
+    """
+    Inicia a pipeline de análise para um job_id existente em background.
+    """
+    if req.method == "OPTIONS":
+        return _options_response()
+
+    logger.info("Recebida requisição de análise.")
+
+    try:
+        try:
+            body = req.get_json()
+        except ValueError:
+            return _json_response({"erro": "Body da requisição deve ser JSON válido."}, status_code=400)
+
+        job_id = body.get("job_id")
+        max_pages = body.get("max_pages", 5)
+        project_context = body.get("project_context", "")
+
+        if not job_id:
+            return _json_response({"erro": "O campo 'job_id' é obrigatório."}, status_code=400)
+
+        if not isinstance(max_pages, int):
+            max_pages = 5
+        
+        job = jobs.get(job_id)
+        if not job:
+            return _json_response({"erro": f"Job não encontrado: {job_id}"}, status_code=404)
+
+        if job["status"] == "processing":
+            return _json_response({
+                "job_id": job_id,
+                "status": "processing",
+                "mensagem": "A análise já está em andamento. Consulte GET /api/status/{job_id}.",
+            }, status_code=202)
+
+        file_path = job.get("file_path")
+        if not file_path or not os.path.exists(file_path):
+            job["status"] = "error"
+            job["error"] = "Arquivo não encontrado no servidor."
+            return _json_response({"erro": "Arquivo não encontrado. Faça o upload novamente."}, status_code=404)
+
+        job["status"] = "processing"
+        job["started_at"] = time.time()
+
+        import threading
+        thread = threading.Thread(
+            target=run_analysis_background,
+            args=(job_id, max_pages, project_context)
+        )
+        thread.start()
 
         return _json_response({
             "job_id": job_id,
-            "status": "completed",
-            "duracao_segundos": round(duracao, 2),
-            "resultado": resultado,
-        })
+            "status": "processing",
+            "mensagem": "Análise iniciada em background.",
+        }, status_code=202)
 
-    except EnvironmentError as e:
-        # Erro de configuração (chave API faltando)
-        if job_id and job_id in jobs:
-            jobs[job_id]["status"] = "error"
-            jobs[job_id]["error"] = str(e)
-        return _json_response(
-            {"erro": str(e)},
-            status_code=500,
-        )
-    except ValueError as e:
-        if job_id and job_id in jobs:
-            jobs[job_id]["status"] = "error"
-            jobs[job_id]["error"] = str(e)
-        return _json_response(
-            {"erro": str(e)},
-            status_code=400,
-        )
     except Exception as e:
-        logger.error("Erro na análise: %s", e, exc_info=True)
-        if job_id and job_id in jobs:
-            jobs[job_id]["status"] = "error"
-            jobs[job_id]["error"] = str(e)
-        return _json_response(
-            {"erro": f"Erro interno na análise: {e}"},
-            status_code=500,
-        )
+        logger.error("Erro ao iniciar análise: %s", e, exc_info=True)
+        return _json_response({"erro": f"Erro interno: {e}"}, status_code=500)
 
 
 # ────────────────────────────────────────────
