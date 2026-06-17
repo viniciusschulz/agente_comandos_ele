@@ -89,6 +89,8 @@ document.addEventListener('DOMContentLoaded', () => {
     fileInput.addEventListener('change', (e) => {
         if (e.target.files && e.target.files.length > 0) {
             handleFileSelection(e.target.files[0]);
+            // Reseta o valor para permitir selecionar o mesmo arquivo novamente
+            e.target.value = '';
         }
     });
 
