@@ -35,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const resFileName = document.getElementById('result-file-name');
     const resPageCount = document.getElementById('result-page-count');
     const btnNewAnalysis = document.getElementById('btn-new-analysis');
+    const btnExport = document.getElementById('btn-export');
     
     // Viewer Elements
     const pageImage = document.getElementById('page-image');
@@ -402,6 +403,57 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.progress-step').forEach(step => step.className = 'progress-step');
         setProgressBar(0);
         changeState(stateUpload);
+    });
+
+    btnExport.addEventListener('click', () => {
+        if (!analysisResults || !analysisResults.pages) {
+            showToast('Nenhum resultado para exportar.', 'error');
+            return;
+        }
+        
+        let reportText = `Relatório de Análise CAD Elétrico\n`;
+        reportText += `Arquivo: ${resFileName.textContent}\n`;
+        reportText += `Data: ${new Date().toLocaleString()}\n\n`;
+        
+        analysisResults.pages.forEach((page, index) => {
+            reportText += `=========================================================\n`;
+            reportText += `                     PÁGINA ${index + 1}\n`;
+            reportText += `=========================================================\n\n`;
+            
+            reportText += `--- RESUMO ---\n`;
+            reportText += `${page.analysis.summary || 'Sem resumo disponível.'}\n\n`;
+            
+            if (page.analysis.components && page.analysis.components.length > 0) {
+                reportText += `--- COMPONENTES IDENTIFICADOS ---\n`;
+                page.analysis.components.forEach(comp => {
+                    reportText += `- ${comp.name || 'Desconhecido'} (${comp.type || 'N/A'})\n`;
+                });
+                reportText += `\n`;
+            }
+            
+            if (page.analysis.errors && page.analysis.errors.length > 0) {
+                reportText += `--- ERROS E ALERTAS ---\n`;
+                page.analysis.errors.forEach(err => {
+                    reportText += `[${err.severity ? err.severity.toUpperCase() : 'ALERTA'}] ${err.description || 'Erro não especificado'}\n`;
+                });
+                reportText += `\n`;
+            }
+            
+            reportText += `\n`;
+        });
+        
+        const blob = new Blob([reportText], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `relatorio_${resFileName.textContent}.txt`;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showToast('Relatório exportado com sucesso!', 'success');
     });
 
     // Accordions
